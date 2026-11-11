@@ -28,13 +28,14 @@
 
       const cost = parseFloat(costInput) || 0;
 
-      // Muskoka T&M 5-Tier Sliding Scale
+      // Muskoka T&M 6-Tier Sliding Scale (Updated for Micro-Parts)
       const defaultTier = useMemo(() => {
         if (cost <= 0) return { pct: 50, tier: "Standard", desc: "Enter your cost below" };
-        if (cost <= 50) return { pct: 100, tier: "Tier 1 (< $50)", desc: "Small parts, valves, loose fittings (100%)" };
-        if (cost <= 250) return { pct: 50, tier: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (50%)" };
-        if (cost <= 750) return { pct: 45, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings lots (45%)" };
-        if (cost <= 1500) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
+        if (cost <= 10.00) return { pct: 300, tier: "Micro-Parts (< $10)", desc: "Single fittings, adapters (300%)" };
+        if (cost <= 50.00) return { pct: 100, tier: "Tier 1 ($10 - $50)", desc: "Small parts, valves, loose fittings (100%)" };
+        if (cost <= 250.00) return { pct: 50, tier: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (50%)" };
+        if (cost <= 750.00) return { pct: 45, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings lots (45%)" };
+        if (cost <= 1500.00) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
         return { pct: 25, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (25%)" };
       }, [cost]);
 
@@ -47,14 +48,14 @@
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
 
-      const buttonOptions = [25, 35, 40, 45, 50, 60, 75, 100];
+      const buttonOptions = [25, 35, 45, 50, 75, 100, 200, 300, 400];
 
       return (
         <div class="space-y-4 pb-8">
           {/* Header */}
           <div class="flex items-center justify-between border-b border-slate-700 pb-3">
             <div>
-              <h1 class="text-xl font-bold tracking-tight text-white">T&M Material Calculator</h1>
+              <h1 class="text-xl font-bold tracking-tight text-white">Worthy Plumbing Calculator</h1>
               <p class="text-xs text-slate-400">Muskoka Trade Sliding Scale</p>
             </div>
             <span class="bg-blue-600/30 text-blue-400 text-xs px-2.5 py-1 rounded-full font-semibold border border-blue-500/30">
@@ -94,7 +95,7 @@
               <span class="text-xs text-slate-400 font-medium">Markup Percentage</span>
               <span class="text-xs font-bold text-blue-400">{activeMarkup}% Selected</span>
             </div>
-            <div class="grid grid-cols-4 gap-1.5">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
               {buttonOptions.map((pct) => (
                 <button
                   key={pct}
@@ -153,11 +154,12 @@
           {/* Tier Reference Cheat Sheet */}
           <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Tier Guidelines</span>
-            <div class="flex justify-between"><span>Tier 1 (&lt; $50):</span> <span class="font-semibold text-slate-300">75% – 100%</span></div>
+            <div class="flex justify-between"><span>Micro-Parts (&lt; $10):</span> <span class="font-semibold text-slate-300">200% – 400%</span></div>
+            <div class="flex justify-between"><span>Tier 1 ($10 – $50):</span> <span class="font-semibold text-slate-300">75% – 100%</span></div>
             <div class="flex justify-between"><span>Tier 2 ($50 – $250):</span> <span class="font-semibold text-slate-300">50% – 60%</span></div>
             <div class="flex justify-between"><span>Tier 3 ($250 – $750):</span> <span class="font-semibold text-slate-300">40% – 50%</span></div>
             <div class="flex justify-between"><span>Tier 4 ($750 – $1,500):</span> <span class="font-semibold text-slate-300">30% – 40%</span></div>
-            <div class="flex justify-between"><span>Tier 5 ($1,500+):</span> <span class="font-semibold text-slate-300">25% – 30%</span></div>
+            <div class="flex justify-between"><span>Tier 5 ($1,500+):</span> <span class="font-semibold text-slate-300">25% – 35%</span></div>
           </div>
         </div>
       );
