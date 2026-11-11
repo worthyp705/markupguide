@@ -31,21 +31,23 @@
       // Muskoka T&M Sliding Scale
       const defaultTier = useMemo(() => {
         if (cost <= 0) return { pct: 50, label: "T&M Baseline", desc: "Standard 50% baseline" };
-        if (cost <= 50) return { pct: 75, label: "Tier 1 (< $50)", desc: "Small parts, valves, fittings" };
-        if (cost <= 250) return { pct: 50, label: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tee kits" };
-        if (cost <= 750) return { pct: 45, label: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings" };
-        if (cost <= 1500) return { pct: 35, label: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners" };
-        return { pct: 25, label: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-line" };
+        if (cost <= 50) return { pct: 100, label: "Tier 1 (< $50)", desc: "Small parts, valves, loose fittings (100%)" };
+        if (cost <= 250) return { pct: 50, label: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (50%)" };
+        if (cost <= 750) return { pct: 45, label: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (45%)" };
+        if (cost <= 1500) return { pct: 35, label: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
+        return { pct: 25, label: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (25%)" };
       }, [cost]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
       const markupDollars = cost * (activeMarkup / 100);
       const billedPreTax = cost + markupDollars;
-      const ccFee = billedPreTax * 0.029; // 2.9% merchant rate
+      const ccFee = billedPreTax * 0.029; // 2.9% credit card merchant fee
       const netCashProfit = markupDollars - ccFee;
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
+
+      const buttonOptions = [25, 35, 40, 50, 60, 75, 100];
 
       return (
         <div class="space-y-4 pb-8">
@@ -88,17 +90,17 @@
           {/* Quick Markup Adjust Buttons */}
           <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-xs text-slate-400">Adjust Markup %</span>
-              <span class="text-xs font-bold text-blue-400">{activeMarkup}%</span>
+              <span class="text-xs text-slate-400 font-medium">Select or Adjust Markup</span>
+              <span class="text-xs font-bold text-blue-400">{activeMarkup}% Markup</span>
             </div>
-            <div class="grid grid-cols-5 gap-1.5">
-              {[25, 35, 40, 50, 75].map((pct) => (
+            <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+              {buttonOptions.map((pct) => (
                 <button
                   key={pct}
                   onClick={() => setCustomMarkup(pct)}
-                  class={`py-2 rounded-lg text-xs font-bold transition-colors ${
+                  class={`py-2.5 rounded-lg text-xs font-bold transition-colors ${
                     activeMarkup === pct
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-blue-600 text-white ring-2 ring-blue-400'
                       : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}
                 >
