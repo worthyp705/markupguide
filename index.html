@@ -28,40 +28,41 @@
 
       const cost = parseFloat(costInput) || 0;
 
-      // Muskoka T&M Sliding Scale
+      // Muskoka T&M 5-Tier Sliding Scale
       const defaultTier = useMemo(() => {
-        if (cost <= 0) return { pct: 50, label: "T&M Baseline", desc: "Standard 50% baseline" };
-        if (cost <= 50) return { pct: 100, label: "Tier 1 (< $50)", desc: "Small parts, valves, loose fittings (100%)" };
-        if (cost <= 250) return { pct: 50, label: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (50%)" };
-        if (cost <= 750) return { pct: 45, label: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (45%)" };
-        if (cost <= 1500) return { pct: 35, label: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
-        return { pct: 25, label: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (25%)" };
+        if (cost <= 0) return { pct: 50, tier: "Standard", desc: "Enter your cost below" };
+        if (cost <= 50) return { pct: 100, tier: "Tier 1 (< $50)", desc: "Small parts, valves, loose fittings (100%)" };
+        if (cost <= 250) return { pct: 50, tier: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (50%)" };
+        if (cost <= 750) return { pct: 45, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings lots (45%)" };
+        if (cost <= 1500) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
+        return { pct: 25, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (25%)" };
       }, [cost]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
+      // Straightforward Markup Math (No Credit Card Fees)
       const markupDollars = cost * (activeMarkup / 100);
       const billedPreTax = cost + markupDollars;
-      const ccFee = billedPreTax * 0.029; // 2.9% credit card merchant fee
-      const netCashProfit = markupDollars - ccFee;
+      const marginPct = billedPreTax > 0 ? (markupDollars / billedPreTax) * 100 : 0;
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
 
-      const buttonOptions = [25, 35, 40, 50, 60, 75, 100];
+      const buttonOptions = [25, 35, 40, 45, 50, 60, 75, 100];
 
       return (
         <div class="space-y-4 pb-8">
+          {/* Header */}
           <div class="flex items-center justify-between border-b border-slate-700 pb-3">
             <div>
               <h1 class="text-xl font-bold tracking-tight text-white">T&M Material Calculator</h1>
-              <p class="text-xs text-slate-400">Muskoka Solo Trade Scale</p>
+              <p class="text-xs text-slate-400">Muskoka Trade Sliding Scale</p>
             </div>
             <span class="bg-blue-600/30 text-blue-400 text-xs px-2.5 py-1 rounded-full font-semibold border border-blue-500/30">
-              T&M Active
+              Cash / E-Transfer
             </span>
           </div>
 
-          {/* Cost Input */}
+          {/* Wholesale Cost Input */}
           <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-sm">
             <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
               Your Cost (Pre-Tax CAD)
@@ -82,18 +83,18 @@
             </div>
             {cost > 0 && (
               <p class="text-xs text-blue-400 mt-2 font-medium">
-                Auto-assigned: {defaultTier.label} &bull; {defaultTier.desc}
+                Auto-assigned: {defaultTier.tier} &bull; {defaultTier.desc}
               </p>
             )}
           </div>
 
-          {/* Quick Markup Adjust Buttons */}
+          {/* Markup % Selector Buttons */}
           <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-xs text-slate-400 font-medium">Select or Adjust Markup</span>
-              <span class="text-xs font-bold text-blue-400">{activeMarkup}% Markup</span>
+              <span class="text-xs text-slate-400 font-medium">Markup Percentage</span>
+              <span class="text-xs font-bold text-blue-400">{activeMarkup}% Selected</span>
             </div>
-            <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+            <div class="grid grid-cols-4 gap-1.5">
               {buttonOptions.map((pct) => (
                 <button
                   key={pct}
@@ -121,16 +122,16 @@
 
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/60 text-xs">
               <div>
-                <span class="text-slate-400">Gross Markup:</span>
-                <p class="font-bold text-slate-200">+${markupDollars.toFixed(2)}</p>
+                <span class="text-slate-400">Your Base Cost:</span>
+                <p class="font-semibold text-slate-300">${cost.toFixed(2)}</p>
               </div>
               <div>
-                <span class="text-slate-400">Net Profit (After CC):</span>
-                <p class="font-bold text-green-400">${netCashProfit.toFixed(2)}</p>
+                <span class="text-slate-400">Markup Profit:</span>
+                <p class="font-bold text-green-400">+${markupDollars.toFixed(2)}</p>
               </div>
               <div>
-                <span class="text-slate-400">Card Fee (2.9%):</span>
-                <p class="font-semibold text-rose-400">-${ccFee.toFixed(2)}</p>
+                <span class="text-slate-400">Gross Margin:</span>
+                <p class="font-semibold text-slate-200">{marginPct.toFixed(1)}%</p>
               </div>
               <div>
                 <span class="text-slate-400">Total with 13% HST:</span>
@@ -139,7 +140,7 @@
             </div>
           </div>
 
-          {/* Clean Invoice Line Suggestion */}
+          {/* Invoice Suggestion */}
           {cost > 0 && (
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
               <span class="text-slate-400 font-semibold uppercase tracking-wider block">Suggested Invoice Line</span>
@@ -148,6 +149,16 @@
               </p>
             </div>
           )}
+
+          {/* Tier Reference Cheat Sheet */}
+          <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+            <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Tier Guidelines</span>
+            <div class="flex justify-between"><span>Tier 1 (&lt; $50):</span> <span class="font-semibold text-slate-300">75% – 100%</span></div>
+            <div class="flex justify-between"><span>Tier 2 ($50 – $250):</span> <span class="font-semibold text-slate-300">50% – 60%</span></div>
+            <div class="flex justify-between"><span>Tier 3 ($250 – $750):</span> <span class="font-semibold text-slate-300">40% – 50%</span></div>
+            <div class="flex justify-between"><span>Tier 4 ($750 – $1,500):</span> <span class="font-semibold text-slate-300">30% – 40%</span></div>
+            <div class="flex justify-between"><span>Tier 5 ($1,500+):</span> <span class="font-semibold text-slate-300">25% – 30%</span></div>
+          </div>
         </div>
       );
     }
