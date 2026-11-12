@@ -23,36 +23,33 @@
     const { useState, useMemo } = React;
 
     function Calculator() {
-      const [pipeType, setPipeType] = useState('none'); // 'none', 'wirsbo', 'abs'
+      const [isPerFoot, setIsPerFoot] = useState(false);
       const [costInput, setCostInput] = useState('');
       const [lengthInput, setLengthInput] = useState('20');
       const [customMarkup, setCustomMarkup] = useState(null);
 
       const baseCost = parseFloat(costInput) || 0;
       const length = parseFloat(lengthInput) || 0;
-      const totalCost = (pipeType !== 'none') ? (baseCost * length) : baseCost;
+      const totalCost = isPerFoot ? (baseCost * length) : baseCost;
 
-      // Sliding Scale + Separate Wirsbo and ABS Rules
+      // Smart Single-Toggle Logic for all materials
       const defaultTier = useMemo(() => {
-        if (pipeType === 'wirsbo') {
-          if (baseCost <= 0) return { pct: 250, tier: "Wirsbo / PEX", desc: "Enter cost per foot below" };
+        if (isPerFoot) {
+          if (baseCost <= 0) return { pct: 250, tier: "Pipe", desc: "Enter cost per foot below" };
           if (baseCost < 1.00) return { pct: 250, tier: "1/2\" Wirsbo (< $1.00/ft)", desc: "Small-bore PEX standard (250%)" };
-          return { pct: 125, tier: "3/4\" Wirsbo ($1.00+/ft)", desc: "Mid-bore PEX standard (125%)" };
-        }
-        if (pipeType === 'abs') {
-           if (baseCost <= 0) return { pct: 75, tier: "ABS Pipe", desc: "Enter cost per foot below" };
-           return { pct: 75, tier: "ABS Pipe ($1.75+/ft)", desc: "Standard ABS markup (75%)" };
+          if (baseCost < 1.75) return { pct: 125, tier: "3/4\" Wirsbo ($1.00 - $1.74/ft)", desc: "Mid-bore PEX standard (125%)" };
+          return { pct: 75, tier: "ABS Pipe ($1.75+/ft)", desc: "1-1/2\"+ ABS standard (75%)" };
         }
         
         // Standard non-pipe rules
-        if (totalCost <= 0) return { pct: 60, tier: "Standard Parts", desc: "Enter your total cost below" };
+        if (totalCost <= 0) return { pct: 60, tier: "General Parts", desc: "Enter your total cost below" };
         if (totalCost <= 10.00) return { pct: 300, tier: "Micro-Parts (< $10)", desc: "Single fittings, adapters (300%)" };
         if (totalCost <= 50.00) return { pct: 100, tier: "Tier 1 ($10 - $50)", desc: "Small parts, valves, loose fittings (100%)" };
         if (totalCost <= 250.00) return { pct: 60, tier: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (60%)" };
         if (totalCost <= 750.00) return { pct: 50, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (50%)" };
         if (totalCost <= 1500.00) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
         return { pct: 30, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (30%)" };
-      }, [totalCost, baseCost, pipeType]);
+      }, [totalCost, baseCost, isPerFoot]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
@@ -61,7 +58,7 @@
       const marginPct = billedPreTax > 0 ? (markupDollars / billedPreTax) * 100 : 0;
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
-      const pricePerFootBilled = (pipeType !== 'none') && length > 0 ? (billedPreTax / length) : 0;
+      const pricePerFootBilled = isPerFoot && length > 0 ? (billedPreTax / length) : 0;
 
       const buttonOptions = [30, 35, 50, 60, 75, 100, 125, 200, 250, 300];
 
@@ -74,31 +71,24 @@
             </div>
           </div>
 
-          {/* Pipe Toggles */}
-          <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 grid grid-cols-3 gap-2">
-             <button 
-              onClick={() => { setPipeType('none'); setCustomMarkup(null); }}
-              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeType === 'none' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-            >
-              General Parts
-            </button>
+          {/* Toggle for Per Foot Pricing */}
+          <div class="flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+            <span class="text-sm font-medium text-slate-300">Calculate Piping by Length</span>
             <button 
-              onClick={() => { setPipeType('wirsbo'); setCustomMarkup(null); }}
-              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeType === 'wirsbo' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+              onClick={() => {
+                setIsPerFoot(!isPerFoot);
+                setCustomMarkup(null);
+                setCostInput(''); // Clear input when switching modes to prevent confusion
+              }}
+              class={`w-12 h-6 rounded-full transition-colors relative ${isPerFoot ? 'bg-blue-500' : 'bg-slate-600'}`}
             >
-              Wirsbo/PEX
-            </button>
-            <button 
-              onClick={() => { setPipeType('abs'); setCustomMarkup(null); }}
-              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeType === 'abs' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-            >
-              ABS Pipe
+              <span class={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${isPerFoot ? 'translate-x-6' : ''}`}></span>
             </button>
           </div>
 
           {/* Input Section */}
           <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-sm space-y-4">
-            {pipeType !== 'none' ? (
+            {isPerFoot ? (
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
@@ -109,7 +99,7 @@
                     <input
                       type="number"
                       step="0.01"
-                      placeholder={pipeType === 'wirsbo' ? '0.60' : '1.95'}
+                      placeholder="1.20"
                       value={costInput}
                       onChange={(e) => { setCostInput(e.target.value); setCustomMarkup(null); }}
                       class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-7 pr-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -188,7 +178,7 @@
                   ${billedPreTax.toFixed(2)}
                 </div>
               </div>
-              {pipeType !== 'none' && length > 0 && (
+              {isPerFoot && length > 0 && (
                 <div class="text-right">
                   <span class="text-[11px] uppercase text-slate-400 block">Billed Rate</span>
                   <span class="text-lg font-bold text-blue-400">${pricePerFootBilled.toFixed(2)}/ft</span>
@@ -220,8 +210,8 @@
           {totalCost > 0 && (
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
               <p class="text-slate-300 font-mono">
-                {pipeType !== 'none' ? 
-                  `${pipeType === 'wirsbo' ? 'Wirsbo/PEX' : 'ABS'} Piping (${length}ft @ $${pricePerFootBilled.toFixed(2)}/ft): $${billedPreTax.toFixed(2)} + HST` : 
+                {isPerFoot ? 
+                  `Plumbing Piping (${length}ft @ $${pricePerFootBilled.toFixed(2)}/ft): $${billedPreTax.toFixed(2)} + HST` : 
                   `Plumbing materials & hardware: $${billedPreTax.toFixed(2)} + HST`
                 }
               </p>
@@ -231,9 +221,9 @@
           {/* Tier Reference Cheat Sheet */}
           <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Pipe Tiers</span>
-            <div class="flex justify-between"><span>1/2" Wirsbo:</span> <span class="font-semibold text-slate-300">250%</span></div>
-            <div class="flex justify-between"><span>3/4" Wirsbo:</span> <span class="font-semibold text-slate-300">125%</span></div>
-            <div class="flex justify-between"><span>ABS Pipe:</span> <span class="font-semibold text-slate-300">75%</span></div>
+            <div class="flex justify-between"><span>1/2" Wirsbo / PEX (&lt; $1.00/ft):</span> <span class="font-semibold text-slate-300">250%</span></div>
+            <div class="flex justify-between"><span>3/4" Wirsbo / 1" PEX ($1.00–$1.74/ft):</span> <span class="font-semibold text-slate-300">125%</span></div>
+            <div class="flex justify-between"><span>1-1/2"+ ABS / 636 ($1.75+/ft):</span> <span class="font-semibold text-slate-300">75%</span></div>
             <div class="border-t border-slate-700 my-1"></div>
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">General Tiers</span>
             <div class="flex justify-between"><span>Micro-Parts (&lt; $10):</span> <span class="font-semibold text-slate-300">300%</span></div>
