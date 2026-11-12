@@ -23,23 +23,32 @@
     const { useState, useMemo } = React;
 
     function Calculator() {
-      const [isPerFoot, setIsPerFoot] = useState(false);
+      const [pipeMode, setPipeMode] = useState('none'); // 'none', 'wirsbo', 'abs', 'copper'
       const [costInput, setCostInput] = useState('');
-      const [lengthInput, setLengthInput] = useState('12');
+      const [lengthInput, setLengthInput] = useState('20');
       const [customMarkup, setCustomMarkup] = useState(null);
 
       const baseCost = parseFloat(costInput) || 0;
       const length = parseFloat(lengthInput) || 0;
-      const totalCost = isPerFoot ? (baseCost * length) : baseCost;
+      const totalCost = (pipeMode !== 'none') ? (baseCost * length) : baseCost;
 
-      // Smart Single-Toggle Logic (Wirsbo, ABS & Copper)
+      // Independent Logic for Each Pipe Material
       const defaultTier = useMemo(() => {
-        if (isPerFoot) {
-          if (baseCost <= 0) return { pct: 250, tier: "Pipe", desc: "Enter cost per foot below" };
-          if (baseCost < 1.00) return { pct: 250, tier: "Small-Bore (< $1.00/ft)", desc: "1/2\" Wirsbo / PEX standard (250%)" };
-          if (baseCost < 1.75) return { pct: 150, tier: "Mid-Bore ($1.00 - $1.74/ft)", desc: "3/4\" Wirsbo / 1\" PEX standard (150%)" };
-          if (baseCost < 4.00) return { pct: 100, tier: "ABS / 1/2\" Copper ($1.75 - $3.99/ft)", desc: "1-1/2\"–2\" ABS & 1/2\" Copper (100%)" };
-          return { pct: 60, tier: "3/4\"–1\"+ Copper / Heavy Pipe ($4.00+/ft)", desc: "Copper & large-diameter pipe (60%)" };
+        if (pipeMode === 'wirsbo') {
+          if (baseCost <= 0) return { pct: 250, tier: "Wirsbo / PEX", desc: "Enter cost per foot below" };
+          if (baseCost < 1.00) return { pct: 250, tier: "1/2\" Wirsbo (< $1.00/ft)", desc: "Small-bore PEX standard (250%)" };
+          return { pct: 150, tier: "3/4\"+ Wirsbo ($1.00+/ft)", desc: "Mid-bore PEX standard (150%)" };
+        }
+        
+        if (pipeMode === 'abs') {
+          if (baseCost <= 0) return { pct: 100, tier: "ABS / PVC Pipe", desc: "Enter cost per foot below" };
+          return { pct: 100, tier: "ABS Pipe", desc: "Standard 1-1/2\" to 3\" ABS (100%)" };
+        }
+
+        if (pipeMode === 'copper') {
+          if (baseCost <= 0) return { pct: 75, tier: "Copper Pipe", desc: "Enter cost per foot below" };
+          if (baseCost < 8.00) return { pct: 75, tier: "1/2\" & 3/4\" Copper", desc: "Small-bore copper standard (75%)" };
+          return { pct: 60, tier: "1\"+ Copper", desc: "Large-bore copper standard (60%)" };
         }
         
         // Standard non-pipe rules
@@ -50,7 +59,7 @@
         if (totalCost <= 750.00) return { pct: 50, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (50%)" };
         if (totalCost <= 1500.00) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
         return { pct: 30, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (30%)" };
-      }, [totalCost, baseCost, isPerFoot]);
+      }, [totalCost, baseCost, pipeMode]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
@@ -59,7 +68,7 @@
       const marginPct = billedPreTax > 0 ? (markupDollars / billedPreTax) * 100 : 0;
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
-      const pricePerFootBilled = isPerFoot && length > 0 ? (billedPreTax / length) : 0;
+      const pricePerFootBilled = (pipeMode !== 'none') && length > 0 ? (billedPreTax / length) : 0;
 
       const buttonOptions = [35, 50, 60, 75, 100, 125, 150, 200, 250, 300];
 
@@ -72,24 +81,37 @@
             </div>
           </div>
 
-          {/* Toggle for Per Foot Pricing */}
-          <div class="flex items-center justify-between bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-            <span class="text-sm font-medium text-slate-300">Calculate Piping by Length</span>
-            <button 
-              onClick={() => {
-                setIsPerFoot(!isPerFoot);
-                setCustomMarkup(null);
-                setCostInput('');
-              }}
-              class={`w-12 h-6 rounded-full transition-colors relative ${isPerFoot ? 'bg-blue-500' : 'bg-slate-600'}`}
+          {/* Dedicated Material Toggles */}
+          <div class="bg-slate-800/80 p-2 rounded-xl border border-slate-700 grid grid-cols-2 gap-2 sm:grid-cols-4">
+             <button 
+              onClick={() => { setPipeMode('none'); setCustomMarkup(null); setCostInput(''); }}
+              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeMode === 'none' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
             >
-              <span class={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${isPerFoot ? 'translate-x-6' : ''}`}></span>
+              Parts
+            </button>
+            <button 
+              onClick={() => { setPipeMode('wirsbo'); setCustomMarkup(null); setCostInput(''); setLengthInput('20'); }}
+              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeMode === 'wirsbo' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+            >
+              Wirsbo
+            </button>
+            <button 
+              onClick={() => { setPipeMode('abs'); setCustomMarkup(null); setCostInput(''); setLengthInput('12'); }}
+              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeMode === 'abs' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+            >
+              ABS
+            </button>
+             <button 
+              onClick={() => { setPipeMode('copper'); setCustomMarkup(null); setCostInput(''); setLengthInput('12'); }}
+              class={`py-2 rounded-lg text-xs font-bold transition-colors ${pipeMode === 'copper' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+            >
+              Copper
             </button>
           </div>
 
           {/* Input Section */}
           <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 shadow-sm space-y-4">
-            {isPerFoot ? (
+            {pipeMode !== 'none' ? (
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
@@ -100,7 +122,7 @@
                     <input
                       type="number"
                       step="0.001"
-                      placeholder="10.585"
+                      placeholder={pipeMode === 'wirsbo' ? '0.60' : pipeMode === 'abs' ? '2.68' : '4.90'}
                       value={costInput}
                       onChange={(e) => { setCostInput(e.target.value); setCustomMarkup(null); }}
                       class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-7 pr-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -114,7 +136,7 @@
                   <input
                     type="number"
                     step="1"
-                    placeholder="12"
+                    placeholder={pipeMode === 'wirsbo' ? '20' : '12'}
                     value={lengthInput}
                     onChange={(e) => { setLengthInput(e.target.value); setCustomMarkup(null); }}
                     class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 px-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -179,7 +201,7 @@
                   ${billedPreTax.toFixed(2)}
                 </div>
               </div>
-              {isPerFoot && length > 0 && (
+              {pipeMode !== 'none' && length > 0 && (
                 <div class="text-right">
                   <span class="text-[11px] uppercase text-slate-400 block">Billed Rate</span>
                   <span class="text-lg font-bold text-blue-400">${pricePerFootBilled.toFixed(2)}/ft</span>
@@ -211,8 +233,8 @@
           {totalCost > 0 && (
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
               <p class="text-slate-300 font-mono">
-                {isPerFoot ? 
-                  `Plumbing Piping (${length}ft @ $${pricePerFootBilled.toFixed(2)}/ft): $${billedPreTax.toFixed(2)} + HST` : 
+                {pipeMode !== 'none' ? 
+                  `${pipeMode === 'wirsbo' ? 'Wirsbo/PEX' : pipeMode === 'abs' ? 'ABS' : 'Copper'} Piping (${length}ft @ $${pricePerFootBilled.toFixed(2)}/ft): $${billedPreTax.toFixed(2)} + HST` : 
                   `Plumbing materials & hardware: $${billedPreTax.toFixed(2)} + HST`
                 }
               </p>
@@ -222,10 +244,11 @@
           {/* Tier Reference Cheat Sheet */}
           <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Pipe Tiers</span>
-            <div class="flex justify-between"><span>1/2" Wirsbo / PEX (&lt; $1.00/ft):</span> <span class="font-semibold text-slate-300">250%</span></div>
-            <div class="flex justify-between"><span>3/4" Wirsbo / 1" PEX ($1.00–$1.74/ft):</span> <span class="font-semibold text-slate-300">150%</span></div>
-            <div class="flex justify-between"><span>ABS / 1/2" Copper ($1.75–$3.99/ft):</span> <span class="font-semibold text-slate-300">100%</span></div>
-            <div class="flex justify-between"><span>3/4"–1"+ Copper / Heavy ($4.00+/ft):</span> <span class="font-semibold text-slate-300">60%</span></div>
+            <div class="flex justify-between"><span>1/2" Wirsbo / PEX:</span> <span class="font-semibold text-slate-300">250%</span></div>
+            <div class="flex justify-between"><span>3/4" Wirsbo / PEX:</span> <span class="font-semibold text-slate-300">150%</span></div>
+            <div class="flex justify-between"><span>ABS (All Sizes):</span> <span class="font-semibold text-slate-300">100%</span></div>
+            <div class="flex justify-between"><span>1/2" & 3/4" Copper:</span> <span class="font-semibold text-slate-300">75%</span></div>
+            <div class="flex justify-between"><span>1"+ Copper:</span> <span class="font-semibold text-slate-300">60%</span></div>
             <div class="border-t border-slate-700 my-1"></div>
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">General Tiers</span>
             <div class="flex justify-between"><span>Micro-Parts (&lt; $10):</span> <span class="font-semibold text-slate-300">300%</span></div>
