@@ -74,11 +74,9 @@
 
       return (
         <div class="space-y-4 pb-8">
-          {/* Header */}
-          <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-            <div>
-              <h1 class="text-xl font-bold tracking-tight text-white">Worthy Plumbing Calculator</h1>
-            </div>
+          {/* Centered Header */}
+          <div class="flex items-center justify-center border-b border-slate-700 pb-3">
+            <h1 class="text-xl font-bold tracking-tight text-white text-center">Worthy Plumbing Calculator</h1>
           </div>
 
           {/* Dedicated Material Toggles */}
@@ -122,7 +120,7 @@
                     <input
                       type="number"
                       step="0.001"
-                      placeholder={pipeMode === 'wirsbo' ? '0.60' : pipeMode === 'abs' ? '2.68' : '4.90'}
+                      placeholder="0.00"
                       value={costInput}
                       onChange={(e) => { setCostInput(e.target.value); setCustomMarkup(null); }}
                       class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-7 pr-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
