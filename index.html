@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Material Markup Calculator</title>
+  <title>Worthy Plumbing Calculator</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM -->
@@ -30,32 +30,32 @@
 
       const baseCost = parseFloat(costInput) || 0;
       const length = parseFloat(lengthInput) || 0;
-      
       const totalCost = isPerFoot ? (baseCost * length) : baseCost;
 
-      // 6-Tier Sliding Scale (Capped at 300%)
+      // Upper-Target Sliding Scale + 100% Cut Pipe Rule
       const defaultTier = useMemo(() => {
-        if (totalCost <= 0) return { pct: 50, tier: "Standard", desc: "Enter your cost below" };
+        if (isPerFoot) {
+          return { pct: 100, tier: "Piping by Length", desc: "ABS / PEX cut-to-length standard (100%)" };
+        }
+        if (totalCost <= 0) return { pct: 60, tier: "Standard", desc: "Enter your cost below" };
         if (totalCost <= 10.00) return { pct: 300, tier: "Micro-Parts (< $10)", desc: "Single fittings, adapters (300%)" };
         if (totalCost <= 50.00) return { pct: 100, tier: "Tier 1 ($10 - $50)", desc: "Small parts, valves, loose fittings (100%)" };
-        if (totalCost <= 250.00) return { pct: 50, tier: "Tier 2 ($50 - $250)", desc: "Couplings, pipe runs, tank tee kits (50%)" };
-        if (totalCost <= 750.00) return { pct: 45, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (45%)" };
+        if (totalCost <= 250.00) return { pct: 60, tier: "Tier 2 ($50 - $250)", desc: "Couplings, System 636, tank tee kits (60%)" };
+        if (totalCost <= 750.00) return { pct: 50, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (50%)" };
         if (totalCost <= 1500.00) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
-        return { pct: 25, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (25%)" };
-      }, [totalCost]);
+        return { pct: 30, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (30%)" };
+      }, [totalCost, isPerFoot]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
-      // Math
       const markupDollars = totalCost * (activeMarkup / 100);
       const billedPreTax = totalCost + markupDollars;
       const marginPct = billedPreTax > 0 ? (markupDollars / billedPreTax) * 100 : 0;
       const hst = billedPreTax * 0.13;
       const totalWithTax = billedPreTax + hst;
-      
       const pricePerFootBilled = isPerFoot && length > 0 ? (billedPreTax / length) : 0;
 
-      const buttonOptions = [25, 35, 45, 50, 75, 100, 200, 300];
+      const buttonOptions = [30, 35, 50, 60, 75, 100, 125, 300];
 
       return (
         <div class="space-y-4 pb-8">
@@ -93,7 +93,7 @@
                     <input
                       type="number"
                       step="0.01"
-                      placeholder="0.00"
+                      placeholder="0.56"
                       value={costInput}
                       onChange={(e) => { setCostInput(e.target.value); setCustomMarkup(null); }}
                       class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-7 pr-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -165,11 +165,19 @@
 
           {/* Result Card */}
           <div class="bg-blue-950/40 border border-blue-500/40 p-4 rounded-xl space-y-3">
-            <div>
-              <span class="text-xs uppercase text-slate-400 tracking-wider">Bill to Client (Pre-Tax)</span>
-              <div class="text-3xl font-extrabold text-green-400">
-                ${billedPreTax.toFixed(2)}
+            <div class="flex justify-between items-end">
+              <div>
+                <span class="text-xs uppercase text-slate-400 tracking-wider">Bill to Client (Pre-Tax)</span>
+                <div class="text-3xl font-extrabold text-green-400">
+                  ${billedPreTax.toFixed(2)}
+                </div>
               </div>
+              {isPerFoot && length > 0 && (
+                <div class="text-right">
+                  <span class="text-[11px] uppercase text-slate-400 block">Billed Rate</span>
+                  <span class="text-lg font-bold text-blue-400">${pricePerFootBilled.toFixed(2)}/ft</span>
+                </div>
+              )}
             </div>
 
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/60 text-xs">
@@ -197,7 +205,7 @@
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-xs space-y-1">
               <p class="text-slate-300 font-mono">
                 {isPerFoot ? 
-                  `ABS/PEX Piping (${length}ft): $${billedPreTax.toFixed(2)} + HST ($${pricePerFootBilled.toFixed(2)}/ft)` : 
+                  `ABS/PEX Piping (${length}ft @ $${pricePerFootBilled.toFixed(2)}/ft): $${billedPreTax.toFixed(2)} + HST` : 
                   `Plumbing materials & hardware: $${billedPreTax.toFixed(2)} + HST`
                 }
               </p>
@@ -208,11 +216,12 @@
           <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Tier Guidelines</span>
             <div class="flex justify-between"><span>Micro-Parts (&lt; $10):</span> <span class="font-semibold text-slate-300">200% – 300%</span></div>
+            <div class="flex justify-between"><span>Cut Pipe (ABS / PEX):</span> <span class="font-semibold text-slate-300">100% – 125%</span></div>
             <div class="flex justify-between"><span>Tier 1 ($10 – $50):</span> <span class="font-semibold text-slate-300">75% – 100%</span></div>
             <div class="flex justify-between"><span>Tier 2 ($50 – $250):</span> <span class="font-semibold text-slate-300">50% – 60%</span></div>
-            <div class="flex justify-between"><span>Tier 3 ($250 – $750):</span> <span class="font-semibold text-slate-300">40% – 50%</span></div>
-            <div class="flex justify-between"><span>Tier 4 ($750 – $1,500):</span> <span class="font-semibold text-slate-300">30% – 40%</span></div>
-            <div class="flex justify-between"><span>Tier 5 ($1,500+):</span> <span class="font-semibold text-slate-300">25% – 35%</span></div>
+            <div class="flex justify-between"><span>Tier 3 ($250 – $750):</span> <span class="font-semibold text-slate-300">45% – 50%</span></div>
+            <div class="flex justify-between"><span>Tier 4 ($750 – $1,500):</span> <span class="font-semibold text-slate-300">35% – 40%</span></div>
+            <div class="flex justify-between"><span>Tier 5 ($1,500+):</span> <span class="font-semibold text-slate-300">25% – 30%</span></div>
           </div>
         </div>
       );
