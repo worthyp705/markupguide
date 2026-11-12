@@ -25,17 +25,20 @@
     function Calculator() {
       const [isPerFoot, setIsPerFoot] = useState(false);
       const [costInput, setCostInput] = useState('');
-      const [lengthInput, setLengthInput] = useState('10');
+      const [lengthInput, setLengthInput] = useState('20');
       const [customMarkup, setCustomMarkup] = useState(null);
 
       const baseCost = parseFloat(costInput) || 0;
       const length = parseFloat(lengthInput) || 0;
       const totalCost = isPerFoot ? (baseCost * length) : baseCost;
 
-      // Upper-Target Sliding Scale + 100% Cut Pipe Rule
+      // Sliding Scale + 3-Tier Cut-Pipe Scale (Wirsbo vs ABS)
       const defaultTier = useMemo(() => {
         if (isPerFoot) {
-          return { pct: 100, tier: "Piping by Length", desc: "ABS / PEX cut-to-length standard (100%)" };
+          if (baseCost <= 0) return { pct: 250, tier: "Piping by Length", desc: "Enter cost per foot below" };
+          if (baseCost < 1.00) return { pct: 250, tier: "Pipe Tier 1 (< $1.00/ft)", desc: "1/2\" Wirsbo / PEX standard (250%)" };
+          if (baseCost < 1.75) return { pct: 125, tier: "Pipe Tier 2 ($1.00 - $1.74/ft)", desc: "3/4\" Wirsbo / 1\" PEX standard (125%)" };
+          return { pct: 75, tier: "Pipe Tier 3 ($1.75+/ft)", desc: "1-1/2\"+ ABS / System 636 standard (75%)" };
         }
         if (totalCost <= 0) return { pct: 60, tier: "Standard", desc: "Enter your cost below" };
         if (totalCost <= 10.00) return { pct: 300, tier: "Micro-Parts (< $10)", desc: "Single fittings, adapters (300%)" };
@@ -44,7 +47,7 @@
         if (totalCost <= 750.00) return { pct: 50, tier: "Tier 3 ($250 - $750)", desc: "Pressure tanks, bulk fittings (50%)" };
         if (totalCost <= 1500.00) return { pct: 35, tier: "Tier 4 ($750 - $1,500)", desc: "Submersible pumps, softeners (35%)" };
         return { pct: 30, tier: "Tier 5 ($1,500+)", desc: "Water heaters, boilers, heat-lines (30%)" };
-      }, [totalCost, isPerFoot]);
+      }, [totalCost, baseCost, isPerFoot]);
 
       const activeMarkup = customMarkup !== null ? customMarkup : defaultTier.pct;
 
@@ -55,7 +58,7 @@
       const totalWithTax = billedPreTax + hst;
       const pricePerFootBilled = isPerFoot && length > 0 ? (billedPreTax / length) : 0;
 
-      const buttonOptions = [30, 35, 50, 60, 75, 100, 125, 300];
+      const buttonOptions = [30, 35, 50, 60, 75, 100, 125, 200, 250, 300];
 
       return (
         <div class="space-y-4 pb-8">
@@ -93,7 +96,7 @@
                     <input
                       type="number"
                       step="0.01"
-                      placeholder="0.56"
+                      placeholder="1.95"
                       value={costInput}
                       onChange={(e) => { setCostInput(e.target.value); setCustomMarkup(null); }}
                       class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 pl-7 pr-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -107,7 +110,7 @@
                   <input
                     type="number"
                     step="1"
-                    placeholder="10"
+                    placeholder="20"
                     value={lengthInput}
                     onChange={(e) => { setLengthInput(e.target.value); setCustomMarkup(null); }}
                     class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2.5 px-3 text-lg font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -146,7 +149,7 @@
               <span class="text-xs text-slate-400 font-medium">Markup Percentage</span>
               <span class="text-xs font-bold text-blue-400">{activeMarkup}% Selected</span>
             </div>
-            <div class="grid grid-cols-4 gap-1.5">
+            <div class="grid grid-cols-5 gap-1.5">
               {buttonOptions.map((pct) => (
                 <button
                   key={pct}
@@ -216,7 +219,9 @@
           <div class="bg-slate-850 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
             <span class="font-bold text-slate-300 block uppercase tracking-wider text-[10px]">Tier Guidelines</span>
             <div class="flex justify-between"><span>Micro-Parts (&lt; $10):</span> <span class="font-semibold text-slate-300">200% – 300%</span></div>
-            <div class="flex justify-between"><span>Cut Pipe (ABS / PEX):</span> <span class="font-semibold text-slate-300">100% – 125%</span></div>
+            <div class="flex justify-between"><span>1/2" Wirsbo / PEX (&lt; $1.00/ft):</span> <span class="font-semibold text-slate-300">200% – 250%</span></div>
+            <div class="flex justify-between"><span>3/4" Wirsbo / 1" PEX ($1.00–$1.74/ft):</span> <span class="font-semibold text-slate-300">100% – 125%</span></div>
+            <div class="flex justify-between"><span>1-1/2"+ ABS / 636 ($1.75+/ft):</span> <span class="font-semibold text-slate-300">60% – 75%</span></div>
             <div class="flex justify-between"><span>Tier 1 ($10 – $50):</span> <span class="font-semibold text-slate-300">75% – 100%</span></div>
             <div class="flex justify-between"><span>Tier 2 ($50 – $250):</span> <span class="font-semibold text-slate-300">50% – 60%</span></div>
             <div class="flex justify-between"><span>Tier 3 ($250 – $750):</span> <span class="font-semibold text-slate-300">45% – 50%</span></div>
